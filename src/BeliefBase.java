@@ -12,8 +12,28 @@ public class BeliefBase {
         expansion(formula);
     }
 
-    public void contraction(Formula formula) {
+    private boolean entailsFormula(Formula formula) {
+        Formula beliefBaseFormula = null;
+        if (beliefBase.size() >= 2) {
+            beliefBaseFormula = new AndFormula(beliefBase.get(0), beliefBase.get(1));
+            for (int i = 2; i < beliefBase.size(); i++) {
+                beliefBaseFormula = new AndFormula(beliefBaseFormula, beliefBase.get(i));
+            }
+        }
+        else if (beliefBase.size() == 1) {
+            beliefBaseFormula = beliefBase.get(0);
+        }
+        if (beliefBaseFormula == null) {
+            return false;
+        }
+        return entailment(beliefBaseFormula, formula);
+    }
 
+    public void contraction(Formula formula) {
+        if (!entailsFormula(formula)) {
+            return;
+        }
+        //TODO: Not done yet.
     }
 
     public void expansion(Formula formula) {
