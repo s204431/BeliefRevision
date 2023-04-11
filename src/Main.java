@@ -8,7 +8,7 @@ public class Main {
 
     public static void main(String[] args) {
         BeliefBase beliefBase = new BeliefBase();
-        String formula = "(((p & q) -> r) <-> ((p -> r) | (q -> r))) | (((p -> q) & (q -> r)) -> (p -> r))";
+        String formula = "(((p & q) -> r) -> ((p -> r) | (q -> r)))";
         //String formula = "((p & q) -> r) & (p -> !r) & (q -> !r) -> !r";
         Formula parsed = Formula.parseString(formula);
         System.out.println("Parsing formula: " + formula);
@@ -17,5 +17,10 @@ public class Main {
         System.out.println("Pretty print: " + parsed.prettyPrint());
         System.out.println("Is valid: " + beliefBase.resolution(parsed));
         System.out.println(beliefBase.entailment(Formula.parseString("p & q"), Formula.parseString("p | q")));
+        beliefBase.revision("p");
+        beliefBase.revision("q");
+        beliefBase.revision("p -> q");
+        System.out.println(beliefBase);
+        new UI(beliefBase);
     }
 }

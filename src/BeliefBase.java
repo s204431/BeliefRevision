@@ -1,11 +1,16 @@
 import formulas.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class BeliefBase {
-    private List<Formula> beliefBase = new ArrayList<>();
+    protected List<Formula> beliefBase = new ArrayList<>();
 
+
+    public void revision(String formula) {
+        revision(Formula.parseString(formula));
+    }
 
     public void revision(Formula formula) {
         contraction(new NotFormula(formula));
@@ -33,7 +38,14 @@ public class BeliefBase {
         if (!entailsFormula(formula)) {
             return;
         }
-        //TODO: Not done yet.
+        List<Formula> beliefBaseCopy = new ArrayList<>(beliefBase);
+        beliefBase = new ArrayList<>();
+        for (int i = beliefBaseCopy.size()-1; i >= 0; i--) {
+            beliefBase.add(0, beliefBaseCopy.get(i));
+            if (entailsFormula(formula)) {
+                beliefBase.remove(0);
+            }
+        }
     }
 
     public void expansion(Formula formula) {
@@ -220,5 +232,17 @@ public class BeliefBase {
         else if (!clauses.get(clauses.size()-1).contains(formula)) { //Not or predicate
             clauses.get(clauses.size()-1).add(formula);
         }
+    }
+
+    public String toString() {
+        StringBuilder s = new StringBuilder("{");
+        for (int i = 0; i < beliefBase.size(); i++) {
+            s.append(beliefBase.get(i).prettyPrint());
+            if (i != beliefBase.size()-1) {
+                s.append(", ");
+            }
+        }
+        s.append("}");
+        return s.toString();
     }
 }
