@@ -1,11 +1,13 @@
 package masterMind;
 
+import main.BeliefBase;
+import main.UI;
+
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 
-public class MasterMindUI extends JPanel {
+public class MasterMindUI extends JPanel implements KeyListener {
     private MasterMindGame game;
 
     private Color[] colors = { null, Color.RED, Color.YELLOW, Color.GREEN, Color.BLUE, Color.PINK, Color.DARK_GRAY, Color.BLACK, Color.WHITE };
@@ -17,9 +19,15 @@ public class MasterMindUI extends JPanel {
     private int[] guess = new int[MasterMindGame.CODE_LENGTH];
     private int guessNumber = 0;
     private boolean showCode = false;
+    private MasterMindAI ai;
+    private UI ui;
 
-    public MasterMindUI(MasterMindGame game) {
+    public MasterMindUI(MasterMindGame game, BeliefBase beliefBase, UI ui) {
         this.game = game;
+
+        ai = new MasterMindAI(beliefBase);
+
+        this.ui = ui;
 
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         screenWidth = (int) screenSize.getWidth();
@@ -55,6 +63,9 @@ public class MasterMindUI extends JPanel {
         add(buttonPanel, BorderLayout.SOUTH);
 
         JFrame mainFrame = new JFrame();
+        mainFrame.setFocusable(true);
+        setFocusable(true);
+        mainFrame.addKeyListener(this);
         mainFrame.setTitle("Master Mind");
         mainFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         mainFrame.add(this);
@@ -145,6 +156,29 @@ public class MasterMindUI extends JPanel {
             g2d.setColor(Color.BLACK);
             g.drawRect(x, y, cellWidth, cellHeight);
         }
+    }
+
+    @Override
+    public void keyTyped(KeyEvent e) {
+
+    }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+        if (!game.getGameOver() && e.getKeyCode() == KeyEvent.VK_A) {
+            int[] move = ai.makeMove(game.getTurn() == MasterMindGame.NUMBER_OF_GUESSES-1);
+            int[] feedback = game.makeGuess(move);
+            if (game.getTurn() != MasterMindGame.NUMBER_OF_GUESSES) {
+                ai.updateBeliefBase(move, feedback);
+                ui.updateList();
+            }
+            repaint();
+        }
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {
+
     }
 }
 

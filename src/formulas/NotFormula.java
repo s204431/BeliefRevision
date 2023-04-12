@@ -1,7 +1,7 @@
 package formulas;
 
 public class NotFormula extends Formula {
-    protected static String operator = "!";
+    public static String operator = "!";
     protected static int precedence = 4;
     protected static Associativity associativity = Associativity.right;
 

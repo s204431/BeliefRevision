@@ -1,3 +1,5 @@
+package main;
+
 import formulas.*;
 
 import java.util.ArrayList;
@@ -17,7 +19,7 @@ public class BeliefBase {
         expansion(formula);
     }
 
-    private boolean entailsFormula(Formula formula) {
+    public boolean entailsFormula(Formula formula) {
         Formula beliefBaseFormula = null;
         if (beliefBase.size() >= 2) {
             beliefBaseFormula = new AndFormula(beliefBase.get(0), beliefBase.get(1));
@@ -49,6 +51,9 @@ public class BeliefBase {
     }
 
     public void expansion(Formula formula) {
+        if (beliefBase.contains(formula)) {
+            beliefBase.remove(formula);
+        }
         beliefBase.add(formula);
     }
 

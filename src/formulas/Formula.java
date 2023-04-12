@@ -6,7 +6,7 @@ import java.util.List;
 public abstract class Formula {
     public enum Associativity {left, right};
     private static Formula[] allOperators = {new AndFormula(), new OrFormula(), new BiconditionFormula(), new ImpliesFormula(), new NotFormula()};
-    protected static String operator; //The string representation of the operator.
+    public static String operator; //The string representation of the operator.
     protected static int precedence; //The precedence of the operator.
     protected static Associativity associativity = Associativity.left; //Use left associativity by default.
     public Formula[] operands;
@@ -130,5 +130,9 @@ public abstract class Formula {
             return "(" + getOperator() + operands[0].prettyPrint() + ")";
         }
         return "(" + operands[0].prettyPrint() + " " + getOperator() + " " + operands[1].prettyPrint() + ")";
+    }
+
+    public boolean equals(Object o) {
+        return o instanceof Formula && ((Formula) o).toString().equals(toString());
     }
 }

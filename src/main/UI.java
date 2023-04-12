@@ -1,10 +1,9 @@
+package main;
+
 import formulas.Formula;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.rmi.server.ExportException;
 
 public class UI extends JPanel {
 
@@ -73,7 +72,7 @@ public class UI extends JPanel {
         repaint();
     }
 
-    private void updateList() {
+    public void updateList() {
         list.removeAll();
         java.util.List<Formula> formulas = beliefBase.beliefBase;
         for (Formula formula : formulas) {

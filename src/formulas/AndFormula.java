@@ -1,7 +1,7 @@
 package formulas;
 
 public class AndFormula extends Formula {
-    protected static String operator = "&";
+    public static String operator = "&";
     protected static int precedence = 3;
 
     protected AndFormula() {
