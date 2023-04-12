@@ -1,4 +1,6 @@
 import formulas.*;
+import masterMind.MasterMindGame;
+import masterMind.MasterMindUI;
 
 import java.text.Normalizer;
 import java.util.ArrayList;
@@ -22,5 +24,8 @@ public class Main {
         beliefBase.revision("p -> q");
         System.out.println(beliefBase);
         new UI(beliefBase);
+
+        MasterMindGame masterMind = new MasterMindGame();
+        new MasterMindUI(masterMind);
     }
 }
