@@ -103,10 +103,10 @@ public class MasterMindAI {
                         formulaString = "";
                         if (feedback[indices[j]] == red) {
                             formulaString += getPredicate(j, colors[j])+AndFormula.operator;
-                            beliefBase.revision(Formula.parseString(getPredicate(j, colors[j])));
+                            beliefBase.revision(Formula.parseString(getPredicate(j, colors[j])), 0);
                             for (int k = 0; k < MasterMindGame.CODE_LENGTH; k++) {
                                 if (k != j && feedback[indices[k]] != red) {
-                                    beliefBase.revision(Formula.parseString(NotFormula.operator+getPredicate(k, colors[j])));
+                                    beliefBase.revision(Formula.parseString(NotFormula.operator+getPredicate(k, colors[j])), 0);
                                     formulaString += NotFormula.operator+getPredicate(k, colors[j])+AndFormula.operator;
                                 }
                             }
@@ -114,10 +114,10 @@ public class MasterMindAI {
                         }
                         else if (feedback[indices[j]] == white) {
                             formulaString += NotFormula.operator+getPredicate(j, colors[j])+AndFormula.operator+"(";
-                            beliefBase.revision(Formula.parseString(NotFormula.operator+getPredicate(j, colors[j])));
+                            beliefBase.revision(Formula.parseString(NotFormula.operator+getPredicate(j, colors[j])), 0);
                             for (int k = 0; k < MasterMindGame.CODE_LENGTH; k++) {
                                 if (k != j && feedback[indices[k]] != red) {
-                                    beliefBase.revision(Formula.parseString(getPredicate(k, colors[j])));
+                                    beliefBase.revision(Formula.parseString(getPredicate(k, colors[j])), 0);
                                     formulaString += getPredicate(k, colors[j])+OrFormula.operator;
                                 }
                             }
@@ -125,10 +125,10 @@ public class MasterMindAI {
                         }
                         else {
                             formulaString += NotFormula.operator+getPredicate(j, colors[j])+AndFormula.operator;
-                            beliefBase.revision(Formula.parseString(NotFormula.operator+getPredicate(j, colors[j])));
+                            beliefBase.revision(Formula.parseString(NotFormula.operator+getPredicate(j, colors[j])), 0);
                             for (int k = 0; k < MasterMindGame.CODE_LENGTH; k++) {
                                 if (feedback[indices[k]] != red) {
-                                    beliefBase.revision(Formula.parseString(NotFormula.operator+getPredicate(k, colors[j])));
+                                    beliefBase.revision(Formula.parseString(NotFormula.operator+getPredicate(k, colors[j])), 0);
                                     formulaString += NotFormula.operator+getPredicate(k, colors[j])+AndFormula.operator;
                                 }
                             }

@@ -24,25 +24,34 @@ public class UI extends JPanel {
 
         JLabel label = new JLabel("Write formula (use !, &, |, ->, <->):");
         label.setFont(label.getFont().deriveFont(20f));
-        label.setBounds(100, 50, 500, 40);
+        label.setBounds(100, 50, 400, 40);
         add(label);
 
+        JLabel label2 = new JLabel("Priority:");
+        label2.setFont(label2.getFont().deriveFont(20f));
+        label2.setBounds(520, 50, 80, 40);
+        add(label2);
+
         JTextField textField = new JTextField();
-        textField.setBounds(100, 100, 500, 40);
+        textField.setBounds(100, 100, 400, 40);
         add(textField);
+
+        JTextField priorityTextField = new JTextField("0");
+        priorityTextField.setBounds(520, 100, 80, 40);
+        add(priorityTextField);
 
         JButton revisionButton = new JButton("Revision");
         revisionButton.setBounds(100, 150, 160, 40);
         revisionButton.addActionListener(e -> {
             try {
-                beliefBase.revision(Formula.parseString(textField.getText()));
+                beliefBase.revision(Formula.parseString(textField.getText()), Integer.parseInt(priorityTextField.getText()));
                 updateList();
             } catch (Exception e1) {}
         });
         JButton expansionButton = new JButton("Expansion");
         expansionButton.addActionListener(e -> {
             try {
-                beliefBase.expansion(Formula.parseString(textField.getText()));
+                beliefBase.expansion(Formula.parseString(textField.getText()), Integer.parseInt(priorityTextField.getText()));
                 updateList();
             } catch (Exception e1) {}
         });
@@ -50,7 +59,7 @@ public class UI extends JPanel {
         JButton contractionButton = new JButton("Contraction");
         contractionButton.addActionListener(e -> {
             try {
-                beliefBase.contraction(Formula.parseString(textField.getText()));
+                beliefBase.contraction(Formula.parseString(textField.getText()), Integer.parseInt(priorityTextField.getText()));
                 updateList();
             } catch (Exception e1) {}
         });
@@ -59,10 +68,10 @@ public class UI extends JPanel {
         add(expansionButton);
         add(contractionButton);
 
-        JLabel label2 = new JLabel("Current belief base:");
-        label2.setFont(label2.getFont().deriveFont(20f));
-        label2.setBounds(100, 230, 500, 40);
-        add(label2);
+        JLabel label3 = new JLabel("Current belief base:");
+        label3.setFont(label3.getFont().deriveFont(20f));
+        label3.setBounds(100, 230, 500, 40);
+        add(label3);
 
         list = new List();
         list.setBounds(100, 280, 500, 300);
@@ -75,8 +84,8 @@ public class UI extends JPanel {
     public void updateList() {
         list.removeAll();
         java.util.List<Formula> formulas = beliefBase.beliefBase;
-        for (Formula formula : formulas) {
-            list.add(formula.prettyPrint());
+        for (int i = 0; i < formulas.size(); i++) {
+            list.add("["+beliefBase.priorities.get(i) + "] " + formulas.get(i).prettyPrint());
         }
         repaint();
     }

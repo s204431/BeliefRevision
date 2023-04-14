@@ -7,16 +7,22 @@ import java.util.Collections;
 import java.util.List;
 
 public class BeliefBase {
-    protected List<Formula> beliefBase = new ArrayList<>();
+    protected List<Formula> beliefBase = new ArrayList<>(); //Formulas in the belief base.
+    protected List<Integer> priorities = new ArrayList<>(); //Priority of each formula.
 
-
-    public void revision(String formula) {
-        revision(Formula.parseString(formula));
+    public void revision(String formula, int priority) {
+        revision(Formula.parseString(formula), priority);
     }
 
-    public void revision(Formula formula) {
-        contraction(new NotFormula(formula));
-        expansion(formula);
+    public void revision(Formula formula, int priority) {
+        boolean success = contraction(new NotFormula(formula), priority);
+        if (success) {
+            int index = beliefBase.indexOf(formula);
+            if (index >= 0) {
+                priority = Math.max(priorities.get(index), priority);
+            }
+            expansion(formula, priority);
+        }
     }
 
     public boolean entailsFormula(Formula formula) {
@@ -36,29 +42,45 @@ public class BeliefBase {
         return entailment(beliefBaseFormula, formula);
     }
 
-    public void contraction(Formula formula) {
+    public boolean contraction(Formula formula, int priority) {
         if (!entailsFormula(formula)) {
-            return;
+            return true;
         }
         List<Formula> beliefBaseCopy = new ArrayList<>(beliefBase);
         beliefBase = new ArrayList<>();
         for (int i = beliefBaseCopy.size()-1; i >= 0; i--) {
             beliefBase.add(0, beliefBaseCopy.get(i));
             if (entailsFormula(formula)) {
+                if (priorities.get(i) > priority) { //Can't add because priority is too low.
+                    beliefBase = beliefBaseCopy;
+                    return false;
+                }
                 beliefBase.remove(0);
             }
         }
+        return true;
     }
 
-    public void expansion(Formula formula) {
+    public void expansion(Formula formula, int priority) {
         if (beliefBase.contains(formula)) {
-            beliefBase.remove(formula);
+            removeFormula(formula);
         }
-        beliefBase.add(formula);
+        int i = 0;
+        while (i < beliefBase.size() && priorities.get(i) <= priority) {
+            i++;
+        }
+        beliefBase.add(i, formula);
+        priorities.add(i, priority);
     }
 
     public boolean entailment(Formula f1, Formula f2) {
         return resolution(new ImpliesFormula(f1, f2));
+    }
+
+    private void removeFormula(Formula formula) {
+        int index = beliefBase.indexOf(formula);
+        beliefBase.remove(index);
+        priorities.remove(index);
     }
 
     //Converts a formula to CNF and performs resolution on the formula. Returns true if it is valid, false if it is not valid.
