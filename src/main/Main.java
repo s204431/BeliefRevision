@@ -16,11 +16,6 @@ public class Main {
         System.out.println("Internal representation: " + parsed);
         System.out.println("Pretty print: " + parsed.prettyPrint());
         System.out.println("Is valid: " + beliefBase.resolution(parsed));
-        System.out.println(beliefBase.entailment(Formula.parseString("p & q"), Formula.parseString("p | q")));
-        /*beliefBase.revision("p");
-        beliefBase.revision("q");
-        beliefBase.revision("p -> q");*/
-        System.out.println(beliefBase);
         UI ui = new UI(beliefBase);
 
         MasterMindGame masterMind = new MasterMindGame();

@@ -5,19 +5,22 @@ import formulas.Formula;
 import formulas.NotFormula;
 import formulas.OrFormula;
 import main.BeliefBase;
-import main.Main;
 
 import java.util.*;
 
 public class MasterMindAI {
 
     private BeliefBase beliefBase;
+    private BeliefBase factBeliefBase;
     private List<Integer>[] notGuessedColors = new ArrayList[MasterMindGame.CODE_LENGTH]; //Colors not yet guessed for each position.
     private static final int FACT_PRIORITY = 100000;
     private List<Integer> alreadyGuessed = new ArrayList<>();
+    private List<int[]> colorsHistory = new ArrayList<>();
+    private List<int[]> feedbackHistory = new ArrayList<>();
 
     public MasterMindAI(BeliefBase beliefBase) {
         this.beliefBase = beliefBase;
+        factBeliefBase = new BeliefBase();
         for (int i = 0; i < notGuessedColors.length; i++) {
             String rule = "";
             notGuessedColors[i] = new ArrayList<>();
@@ -30,6 +33,7 @@ public class MasterMindAI {
             }
             //Add game rule with high priority.
             beliefBase.revision(rule, FACT_PRIORITY);
+            factBeliefBase.revision(rule, FACT_PRIORITY);
         }
         //Initial guess.
         beliefBase.revision(getPredicate(0, 1), 0);
@@ -38,28 +42,68 @@ public class MasterMindAI {
         beliefBase.revision(getPredicate(3, 2), 0);
     }
 
-    public int[] makeMove(boolean isFinalMove) {
-        done = false;
+    private int proveColor(int position) {
+        for (int i = 1; i <= MasterMindGame.NUMBER_OF_COLORS; i++) {
+            if (factBeliefBase.entailsFormula(Formula.parseString(getPredicate(position, i)))) {
+                return i;
+            }
+        }
+        List<Integer> possibilities = new ArrayList<>();
+        for (int i = 1; i <= MasterMindGame.NUMBER_OF_COLORS; i++) {
+            if (!factBeliefBase.entailsFormula(Formula.parseString("!"+getPredicate(position, i)))) {
+                possibilities.add(i);
+            }
+        }
+        if (possibilities.size() == 1) {
+            return possibilities.get(0);
+        }
+        return -1;
+    }
+
+    private int[] knownCode() {
         int[] result = new int[MasterMindGame.CODE_LENGTH];
+        for (int i = 0; i < result.length; i++) {
+            int color = proveColor(i);
+            if (color == -1) {
+                return null;
+            }
+            result[i] = color;
+        }
+        return result;
+    }
+
+    public int[] makeMove(boolean isFinalMove) {
+        int[] result = knownCode();
+        if (result != null) {
+            return result;
+        }
+        result = new int[MasterMindGame.CODE_LENGTH];
         Random r = new Random();
         //if (isFinalMove) {
+        boolean[] knowColor = new boolean[MasterMindGame.CODE_LENGTH];
             for (int i = 0; i < MasterMindGame.CODE_LENGTH; i++) {
-                int known = getKnownColor(i);
+                int known = proveColor(i);
                 if (known >= 0) {
-                    if (isFinalMove) {
-                        result[i] = known;
+                    result[i] = known;
+                    knowColor[i] = true;
+                    continue;
+                }
+                int believed = getBelievedColor(i);
+                if (believed >= 0) {
+                    if (isFinalMove || colorsHistory.isEmpty()) {
+                        result[i] = believed;
                     }
                     else {
                         result[i] = r.nextInt(1, MasterMindGame.NUMBER_OF_COLORS+1);
                     }
                 }
                 else {
-                    List<Integer> possibilities = getPossibilities(i);
-                    if (possibilities.isEmpty() || (!isFinalMove && possibilities.size() == 1)) {
+                    List<Integer> believedPossibilities = getPossibilities(i);
+                    if (believedPossibilities.isEmpty() || (!isFinalMove && believedPossibilities.size() == 1)) {
                         result[i] = r.nextInt(1, MasterMindGame.NUMBER_OF_COLORS+1);
                     }
                     else {
-                        result[i] = possibilities.get(r.nextInt(possibilities.size()));
+                        result[i] = believedPossibilities.get(r.nextInt(believedPossibilities.size()));
                     }
                 }
             }
@@ -68,12 +112,12 @@ public class MasterMindAI {
                 string += i;
             }
             if (!isFinalMove && alreadyGuessed.contains(Integer.parseInt(string))) {
-                result = getRandomGuess();
+                result = getRandomGuess(result, knowColor);
             }
         //}
-        /*else {
-            result = getRandomGuess();
-        }*/
+        //else {
+            //result = getRandomGuess();
+        //}
         String string2 = "";
         for (int i : result) {
             string2 += i;
@@ -82,10 +126,13 @@ public class MasterMindAI {
         return result;
     }
 
-    private int[] getRandomGuess() {
-        int[] result = new int[MasterMindGame.CODE_LENGTH];
+    private int[] getRandomGuess(int[] currentGuess, boolean[] knowColor) {
+        int[] result = currentGuess;
         Random r = new Random();
         for (int i = 0; i < MasterMindGame.CODE_LENGTH; i++) {
+            if (knowColor[i]) {
+                continue;
+            }
             if (!notGuessedColors[i].isEmpty()) {
                 int index = r.nextInt(notGuessedColors[i].size());
                 result[i] = notGuessedColors[i].get(index);
@@ -105,54 +152,13 @@ public class MasterMindAI {
         return n*factorial(n-1);
     }
 
-    private int choose(int n, int k) {
-        return factorial(n)/(factorial(n-k)*factorial(k));
-    }
-
-    private void getKnowledge(int[] colors, int[] feedback) {
+    private List<Formula>[] getKnowledge(int[] colors, int[] feedback, int[] indices) {
         int red = MasterMindGame.Color.RED.ordinal();
         int white = MasterMindGame.Color.WHITE.ordinal();
-        int nReds = 0;
-        int nWhites = 0;
-        List<Integer> feedbackList = new ArrayList<>();
-        for (int item : feedback) {
-            if (item == red) {
-                nReds++;
-            } else if (item == white) {
-                nWhites++;
-            }
-            feedbackList.add(item);
-        }
-        int priority = factorial(MasterMindGame.CODE_LENGTH) - choose(MasterMindGame.CODE_LENGTH, nReds)*choose(MasterMindGame.CODE_LENGTH-nReds, nWhites);
-        if (priority == factorial(MasterMindGame.CODE_LENGTH)-1) {
-            priority = FACT_PRIORITY;
-        }
-        else {
-            priority += nReds*2+nWhites;
-        }
-        if (nReds + nWhites == MasterMindGame.CODE_LENGTH) {
-            List<Integer> colorsNotPresent = new ArrayList<>();
-            for (int i = 1; i <= MasterMindGame.NUMBER_OF_COLORS; i++) {
-                colorsNotPresent.add(i);
-            }
-            for (int i : colors) {
-                colorsNotPresent.remove((Integer)i);
-            }
-            for (int i : colorsNotPresent) {
-                for (int j = 0; j < MasterMindGame.CODE_LENGTH; j++) {
-                    beliefBase.revision(NotFormula.operator + getPredicate(j, i), FACT_PRIORITY);
-                }
-            }
-        }
-        Collections.shuffle(feedbackList);
-        if (nReds == 0) {
-            for (int i = 0; i < MasterMindGame.CODE_LENGTH; i++) {
-                beliefBase.revision(NotFormula.operator+getPredicate(i, colors[i]), FACT_PRIORITY);
-            }
-        }
+        List<Formula>[] result = new ArrayList[MasterMindGame.CODE_LENGTH];
         for (int i = 0; i < MasterMindGame.CODE_LENGTH; i++) {
-            if (feedbackList.get(i) == red) {
-                //beliefBase.revision(Formula.parseString(getPredicate(j, colors[j])), priority);
+            result[i] = new ArrayList<>();
+            if (feedback[indices[i]] == red) {
                 String formulaString = getPredicate(i, colors[i]) + AndFormula.operator;
                 for (int j = 1; j <= MasterMindGame.NUMBER_OF_COLORS; j++) {
                     if (j != colors[i]) {
@@ -161,53 +167,49 @@ public class MasterMindAI {
                     }
                 }
                 formulaString = formulaString.substring(0, formulaString.length()-1);
-                beliefBase.revision(formulaString, priority);
-                for (int j = 0; j < MasterMindGame.CODE_LENGTH; j++) {
-                    if (j != i && feedbackList.get(j) != red) {
+                result[i].add(Formula.parseString(formulaString));
+                /*for (int j = 0; j < MasterMindGame.CODE_LENGTH; j++) {
+                    if (j != i && feedback[indices[j]] != red) {
                         beliefBase.revision(Formula.parseString(NotFormula.operator+getPredicate(j, colors[i])), priority);
+                        result[i].add(Formula.parseString(NotFormula.operator+getPredicate(j, colors[i])));
                     }
-                }
+                }*/
             }
-            else if (feedbackList.get(i) == white) {
-                String formulaString = "";
-                beliefBase.revision(Formula.parseString(NotFormula.operator+getPredicate(i, colors[i])), priority);
-                for (int j = 0; j < MasterMindGame.CODE_LENGTH; j++) {
-                    if (j != i && feedbackList.get(j) != red) {
+            else if (feedback[indices[i]] == white) {
+                //String formulaString = "";
+                result[i].add(Formula.parseString(NotFormula.operator+getPredicate(i, colors[i])));
+                /*for (int j = 0; j < MasterMindGame.CODE_LENGTH; j++) {
+                    if (j != i && feedback[indices[j]] != red) {
                         formulaString += getPredicate(j, colors[i])+OrFormula.operator;
                     }
                 }
                 formulaString = formulaString.substring(0, formulaString.length()-1);
-                //beliefBase.revision(formulaString, priority);
+                beliefBase.revision(formulaString, priority);*/
             }
             else {
+                boolean hasWhite = false;
                 for (int j = 0; j < MasterMindGame.CODE_LENGTH; j++) {
-                    if (feedbackList.get(j) != red) {
-                        beliefBase.revision(Formula.parseString(NotFormula.operator+getPredicate(j, colors[i])), priority);
+                    if (colors[j] == colors[i] && feedback[indices[j]] == white) {
+                        hasWhite = true;
+                        break;
+                    }
+                }
+                if (hasWhite) {
+                    result[i].add(Formula.parseString(NotFormula.operator+getPredicate(i, colors[i])));
+                }
+                else {
+                    for (int j = 0; j < MasterMindGame.CODE_LENGTH; j++) {
+                        if (feedback[indices[j]] != red) {
+                            result[i].add(Formula.parseString(NotFormula.operator+getPredicate(j, colors[i])));
+                        }
                     }
                 }
             }
         }
+        return result;
     }
 
-
-    boolean done = false;
-    private String getKnowledgeRecursive(String formulaString, int[] colors, int[] feedback, int[] indices, int index, List<Integer> alreadyTried) {
-        if (done) {
-            return formulaString;
-        }
-        int red = MasterMindGame.Color.RED.ordinal();
-        int white = MasterMindGame.Color.WHITE.ordinal();
-        int nReds = 0;
-        int nWhites = 0;
-        for (int i = 0; i < feedback.length; i++) {
-            if (feedback[i] == red) {
-                nReds++;
-            }
-            else if (feedback[i] == white) {
-                nWhites++;
-            }
-        }
-        int priority = factorial(MasterMindGame.CODE_LENGTH) - choose(MasterMindGame.CODE_LENGTH, nReds)*choose(MasterMindGame.CODE_LENGTH-nReds, nWhites);
+    private List<List<Formula>[]> getKnowledgeRecursive(List<List<Formula>[]> formulas, List<int[]> feedbackDistributions, int[] colors, int[] feedback, int[] indices, int index, List<Integer> alreadyTried) {
         for (int i = 0; i < indices.length; i++) {
             boolean alreadyContained = false;
             for (int j = 0; j < index; j++) {
@@ -219,8 +221,7 @@ public class MasterMindAI {
             if (!alreadyContained) {
                 indices[index] = i;
                 if (index < indices.length-1) {
-                    formulaString = getKnowledgeRecursive(formulaString, colors, feedback, indices, index+1, alreadyTried);
-                    return formulaString;
+                    formulas = getKnowledgeRecursive(formulas, feedbackDistributions, colors, feedback, indices, index+1, alreadyTried);
                 }
                 else {
                     String hashValueString = "";
@@ -232,64 +233,37 @@ public class MasterMindAI {
                         continue;
                     }
                     alreadyTried.add(hashValue);
-                    formulaString = "";
-                    if (formulaString.equals("")) {
-                        formulaString += "(";
-                    }
-                    else {
-                        formulaString += OrFormula.operator+"(";
-                    }
-                    for (int j = 0; j < MasterMindGame.CODE_LENGTH; j++) {
-                        formulaString = "";
-                        if (feedback[indices[j]] == red) {
-                            formulaString += getPredicate(j, colors[j])+AndFormula.operator;
-                            beliefBase.revision(Formula.parseString(getPredicate(j, colors[j])), priority);
-                            for (int k = 0; k < MasterMindGame.CODE_LENGTH; k++) {
-                                if (k != j && feedback[indices[k]] != red) {
-                                    beliefBase.revision(Formula.parseString(NotFormula.operator+getPredicate(k, colors[j])), priority);
-                                    formulaString += NotFormula.operator+getPredicate(k, colors[j])+AndFormula.operator;
-                                }
+                    List<Formula>[] result = getKnowledge(colors, feedback, indices);
+                    String formulaString = NotFormula.operator+"(";
+                    for (int j = 0; j < result.length; j++) {
+                        for (int k = 0; k < result[j].size(); k++) {
+                            formulaString += result[j].get(k).prettyPrint();
+                            if (k != result[j].size()-1) {
+                                formulaString += AndFormula.operator;
                             }
-                            formulaString = formulaString.substring(0, formulaString.length()-1);
                         }
-                        else if (feedback[indices[j]] == white) {
-                            //formulaString += NotFormula.operator+getPredicate(j, colors[j])+AndFormula.operator+"(";
-                            formulaString = "";
-                            beliefBase.revision(Formula.parseString(NotFormula.operator+getPredicate(j, colors[j])), priority);
-                            for (int k = 0; k < MasterMindGame.CODE_LENGTH; k++) {
-                                if (k != j && feedback[indices[k]] != red) {
-                                    //beliefBase.revision(Formula.parseString(getPredicate(k, colors[j])), priority);
-                                    formulaString += getPredicate(k, colors[j])+OrFormula.operator;
-                                }
-                            }
-                            formulaString = formulaString.substring(0, formulaString.length()-1);
-                            beliefBase.revision(formulaString, priority);
+                        if (j != result.length-1) {
+                            formulaString += AndFormula.operator;
                         }
-                        else {
-                            formulaString += NotFormula.operator+getPredicate(j, colors[j])+AndFormula.operator;
-                            //beliefBase.revision(Formula.parseString(NotFormula.operator+getPredicate(j, colors[j])), priority);
-                            for (int k = 0; k < MasterMindGame.CODE_LENGTH; k++) {
-                                if (feedback[indices[k]] != red) {
-                                    beliefBase.revision(Formula.parseString(NotFormula.operator+getPredicate(k, colors[j])), priority);
-                                    formulaString += NotFormula.operator+getPredicate(k, colors[j])+AndFormula.operator;
-                                }
-                            }
-                            formulaString = formulaString.substring(0, formulaString.length()-1);
-                        }
-                        //formulaString += AndFormula.operator;
-                        //beliefBase.revision(Formula.parseString(formulaString));
                     }
                     formulaString += ")";
-                    //formulaString = formulaString.substring(0, formulaString.length()-1)+")";
-                    done = true;
+                    if (!factBeliefBase.entailsFormula(Formula.parseString(formulaString))) {
+                        //Formula is possible.
+                        formulas.add(result);
+                        int[] feedbackDistribution = new int[feedback.length];
+                        for (int j = 0; j < feedback.length; j++) {
+                            feedbackDistribution[j] = feedback[indices[j]];
+                        }
+                        feedbackDistributions.add(feedbackDistribution);
+                    }
                 }
             }
         }
-        return formulaString;
+        return formulas;
     }
 
     //Returns a color at a position if we know the color. Otherwise, returns -1.
-    private int getKnownColor(int position) {
+    private int getBelievedColor(int position) {
         for (int i = 1; i <= MasterMindGame.NUMBER_OF_COLORS; i++) {
             if (beliefBase.entailsFormula(Formula.parseString(getPredicate(position, i)))) {
                 return i;
@@ -310,8 +284,73 @@ public class MasterMindAI {
     }
 
     public void updateBeliefBase(int[] colors, int[] feedback) {
-        //String formulaString = getKnowledgeRecursive("", colors, feedback, new int[MasterMindGame.CODE_LENGTH], 0, new ArrayList<>());
-        getKnowledge(colors, feedback);
+        colorsHistory.add(colors);
+        feedbackHistory.add(feedback);
+
+        int sizeBefore;
+        do {
+            sizeBefore = factBeliefBase.size();
+            for (int i = 0; i < colorsHistory.size(); i++) {
+                reviseBeliefBase(colorsHistory.get(i), feedbackHistory.get(i));
+            }
+        } while(sizeBefore != factBeliefBase.size());
+    }
+
+    private void reviseBeliefBase(int[] colors, int[] feedback) {
+        int red = MasterMindGame.Color.RED.ordinal();
+        int white = MasterMindGame.Color.WHITE.ordinal();
+        int nReds = 0;
+        int nWhites = 0;
+        for (int item : feedback) {
+            if (item == red) {
+                nReds++;
+            } else if (item == white) {
+                nWhites++;
+            }
+        }
+        if (nReds + nWhites == MasterMindGame.CODE_LENGTH) {
+            List<Integer> colorsNotPresent = new ArrayList<>();
+            for (int i = 1; i <= MasterMindGame.NUMBER_OF_COLORS; i++) {
+                colorsNotPresent.add(i);
+            }
+            for (int i : colors) {
+                colorsNotPresent.remove((Integer)i);
+            }
+            for (int i : colorsNotPresent) {
+                for (int j = 0; j < MasterMindGame.CODE_LENGTH; j++) {
+                    beliefBase.revision(NotFormula.operator + getPredicate(j, i), FACT_PRIORITY);
+                    factBeliefBase.revision(NotFormula.operator + getPredicate(j, i), FACT_PRIORITY);
+                }
+            }
+        }
+        if (nReds == 0) {
+            for (int i = 0; i < MasterMindGame.CODE_LENGTH; i++) {
+                beliefBase.revision(NotFormula.operator + getPredicate(i, colors[i]), FACT_PRIORITY);
+                factBeliefBase.revision(NotFormula.operator + getPredicate(i, colors[i]), FACT_PRIORITY);
+            }
+        }
+        List<int[]> feedbackDistributions = new ArrayList<>();
+        List<List<Formula>[]> result = getKnowledgeRecursive(new ArrayList<>(), feedbackDistributions, colors, feedback, new int[MasterMindGame.CODE_LENGTH], 0, new ArrayList<>());
+
+        //Choose random possibility.
+        int index = new Random().nextInt(result.size());
+        List<Formula>[] choice = result.get(index);
+        int priority;
+        if (result.size() == 1) {
+            priority = FACT_PRIORITY;
+        }
+        else {
+            priority = factorial(MasterMindGame.CODE_LENGTH) - result.size();
+        }
+        //Add the formulas.
+        for (int i = 0; i < choice.length; i++) {
+            for (int j = 0; j < choice[i].size(); j++) {
+                beliefBase.revision(choice[i].get(j), priority);
+                if (priority >= FACT_PRIORITY) {
+                    factBeliefBase.revision(choice[i].get(j), priority);
+                }
+            }
+        }
     }
 
     private String getPredicate(int position, int color) {

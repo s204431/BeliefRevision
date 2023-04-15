@@ -4,7 +4,7 @@ import java.util.Random;
 
 public class MasterMindGame {
     public static final int CODE_LENGTH = 4;
-    public static final int NUMBER_OF_COLORS = 5;
+    public static final int NUMBER_OF_COLORS = 6;
     public static final int NUMBER_OF_GUESSES = 10;
 
     public enum Color { EMPTY, RED, YELLOW, GREEN, BLUE, PINK, GRAY, BLACK, WHITE };

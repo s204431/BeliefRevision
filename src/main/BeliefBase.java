@@ -9,6 +9,10 @@ public class BeliefBase {
     protected List<Formula> beliefBase = new ArrayList<>(); //Formulas in the belief base.
     protected List<Integer> priorities = new ArrayList<>(); //Priority of each formula.
 
+    public int size() {
+        return beliefBase.size();
+    }
+
     public void revision(String formula, int priority) {
         revision(Formula.parseString(formula), priority);
     }
@@ -104,64 +108,13 @@ public class BeliefBase {
         //Extract clauses.
         List<List<Formula>> clauses = extractClauses(formula);
 
-        n = 0;
         //Perform resolution.
         return performResolution(clauses);
     }
 
-    int n = 0;
-    //Performs the resolution after the formula has been converted to CNF.
-    private boolean performResolution2(List<List<Formula>> clauses) {
-        System.out.println(n++);
-        if (n > 100000) {
-            System.out.println(clauses);
-        }
-        for (int i = 0; i < clauses.size(); i++) {
-            for (int j = i+1; j < clauses.size(); j++) {
-                for (int k = 0; k < clauses.get(i).size(); k++) {
-                    for (int l = 0; l < clauses.get(j).size(); l++) {
-                        if (isClash(clauses.get(i).get(k), clauses.get(j).get(l))) {
-                            List<Formula> clashed = new ArrayList<>();
-                            for (int a = 0; a < clauses.get(i).size(); a++) {
-                                if (a != k && !clashed.contains(clauses.get(i).get(a))) {
-                                    clashed.add(clauses.get(i).get(a));
-                                }
-                            }
-                            for (int a = 0; a < clauses.get(j).size(); a++) {
-                                if (a != l && !clashed.contains(clauses.get(j).get(a))) {
-                                    clashed.add(clauses.get(j).get(a));
-                                }
-                            }
-                            if (clashed.isEmpty()) { //Empty clause reached.
-                                return true;
-                            }
-                            List<List<Formula>> copy = new ArrayList<>(List.copyOf(clauses));
-                            List<Formula> clause1 = clauses.get(i);
-                            List<Formula> clause2 = clauses.get(j);
-                            copy.remove(clause1);
-                            copy.remove(clause2);
-                            copy.add(clashed);
-                            boolean isValid = performResolution(copy);
-                            return isValid;
-                            /*if (isValid) {
-                                return true;
-                            }*/
-                        }
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
     private boolean performResolution(List<List<Formula>> clauses) {
-        //System.out.println("Starting");
-        n = 0;
         int prevSize = 0;
         while(true) {
-            //System.out.println(n++);
-            //System.out.println(clauses.size());
-            //System.out.println("b" + prevSize);
             //Clash all clauses.
             List<List<Formula>> newClauses = new ArrayList<>();
             for (int i = 0; i < clauses.size(); i++) {
