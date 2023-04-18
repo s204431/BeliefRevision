@@ -2,8 +2,10 @@ package main;
 
 import formulas.*;
 
+import java.awt.*;
 import java.text.Normalizer;
 import java.util.*;
+import java.util.List;
 
 public class BeliefBase {
     protected List<Formula> beliefBase = new ArrayList<>(); //Formulas in the belief base.
@@ -18,17 +20,11 @@ public class BeliefBase {
     }
 
     public void revision(Formula formula, int priority) {
-        boolean success = contraction(new NotFormula(formula), priority);
-        if (success) {
-            int index = beliefBase.indexOf(formula);
-            if (index >= 0) {
-                priority = Math.max(priorities.get(index), priority);
-            }
-            expansion(formula, priority);
-        }
+        contraction(new NotFormula(formula));
+        expansion(formula, priority);
     }
 
-    public boolean entailsFormula(Formula formula) {
+    public Formula getBeliefBaseFormula(List<Formula> beliefBase) {
         Formula beliefBaseFormula = null;
         if (beliefBase.size() >= 2) {
             beliefBaseFormula = new AndFormula(beliefBase.get(0), beliefBase.get(1));
@@ -39,34 +35,74 @@ public class BeliefBase {
         else if (beliefBase.size() == 1) {
             beliefBaseFormula = beliefBase.get(0);
         }
+        return beliefBaseFormula;
+    }
+
+    private boolean entailsFormula(List<Formula> beliefBase, Formula formula) {
+        Formula beliefBaseFormula = getBeliefBaseFormula(beliefBase);
         if (beliefBaseFormula == null) {
             return false;
         }
         return entailment(beliefBaseFormula, formula);
     }
 
-    public boolean contraction(Formula formula, int priority) {
+    public boolean entailsFormula(Formula formula) {
+        return entailsFormula(beliefBase, formula);
+    }
+
+    private List<List<Formula>> getInclusionSubsets(List<Formula> formulas, Formula formulaToContract, int nFormulas, int startIndex, List<List<Formula>> result) {
+        if (formulas.size() == nFormulas) {
+            if (!entailsFormula(formulas, formulaToContract)) {
+                result.add(new ArrayList<>(formulas));
+            }
+        }
+        else {
+            for (int i = startIndex; i < formulas.size(); i++) {
+                Formula formula = formulas.get(i);
+                formulas.remove(i);
+                result = getInclusionSubsets(formulas, formulaToContract, nFormulas, i, result);
+                formulas.add(i, formula);
+            }
+        }
+        return result;
+    }
+
+    public void contraction(Formula formula) {
         if (!entailsFormula(formula)) {
-            return true;
+            return;
         }
         List<Formula> beliefBaseCopy = new ArrayList<>(beliefBase);
         List<Integer> prioritiesCopy = new ArrayList<>(priorities);
-        beliefBase = new ArrayList<>();
-        priorities = new ArrayList<>();
-        for (int i = beliefBaseCopy.size()-1; i >= 0; i--) {
-            beliefBase.add(0, beliefBaseCopy.get(i));
-            priorities.add(0, prioritiesCopy.get(i));
-            if (entailsFormula(formula)) {
-                if (prioritiesCopy.get(i) > priority) { //Can't add because priority is too low.
-                    beliefBase = beliefBaseCopy;
-                    priorities = prioritiesCopy;
-                    return false;
-                }
-                beliefBase.remove(0);
-                priorities.remove(0);
+        List<List<Formula>> result = new ArrayList<>();
+        for (int i = beliefBaseCopy.size()-1; i >= 1; i--) {
+            result = getInclusionSubsets(beliefBaseCopy, formula, i, 0, new ArrayList<>());
+            if (!result.isEmpty()) {
+                break;
             }
         }
-        return true;
+        if (result.isEmpty()) {
+            beliefBase = new ArrayList<>();
+            priorities = new ArrayList<>();
+        }
+        else {
+            int best = -1;
+            int bestIndex = -1;
+            for (int i = 0; i < result.size(); i++) {
+                int score = 0;
+                for (int j = 0; j < result.get(i).size(); j++) {
+                    score += priorities.get(beliefBase.indexOf(result.get(i).get(j)));
+                }
+                if (score > best) {
+                    best = score;
+                    bestIndex = i;
+                }
+            }
+            beliefBase = result.get(bestIndex);
+            priorities = new ArrayList<>();
+            for (int i = 0; i < beliefBase.size(); i++) {
+                priorities.add(prioritiesCopy.get(beliefBaseCopy.indexOf(beliefBase.get(i))));
+            }
+        }
     }
 
     public void expansion(Formula formula, int priority) {
@@ -305,5 +341,46 @@ public class BeliefBase {
         }
         s.append("}");
         return s.toString();
+    }
+
+    //----Stuff for mastermind only----//
+
+    public void revisionMastermind(String formula, int priority) {
+        revisionMastermind(Formula.parseString(formula), priority);
+    }
+
+    public void revisionMastermind(Formula formula, int priority) {
+        boolean success = contractionMastermind(new NotFormula(formula), priority);
+        if (success) {
+            int index = beliefBase.indexOf(formula);
+            if (index >= 0) {
+                priority = Math.max(priorities.get(index), priority);
+            }
+            expansion(formula, priority);
+        }
+    }
+
+    public boolean contractionMastermind(Formula formula, int priority) {
+        if (!entailsFormula(formula)) {
+            return true;
+        }
+        List<Formula> beliefBaseCopy = new ArrayList<>(beliefBase);
+        List<Integer> prioritiesCopy = new ArrayList<>(priorities);
+        beliefBase = new ArrayList<>();
+        priorities = new ArrayList<>();
+        for (int i = beliefBaseCopy.size()-1; i >= 0; i--) {
+            beliefBase.add(0, beliefBaseCopy.get(i));
+            priorities.add(0, prioritiesCopy.get(i));
+            if (entailsFormula(formula)) {
+                if (prioritiesCopy.get(i) > priority) { //Can't add because priority is too low.
+                    beliefBase = beliefBaseCopy;
+                    priorities = prioritiesCopy;
+                    return false;
+                }
+                beliefBase.remove(0);
+                priorities.remove(0);
+            }
+        }
+        return true;
     }
 }

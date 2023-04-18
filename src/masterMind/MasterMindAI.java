@@ -32,14 +32,14 @@ public class MasterMindAI {
                 }
             }
             //Add game rule with high priority.
-            beliefBase.revision(rule, FACT_PRIORITY);
-            factBeliefBase.revision(rule, FACT_PRIORITY);
+            beliefBase.revisionMastermind(rule, FACT_PRIORITY);
+            factBeliefBase.revisionMastermind(rule, FACT_PRIORITY);
         }
         //Initial guess.
-        beliefBase.revision(getPredicate(0, 1), 0);
-        beliefBase.revision(getPredicate(1, 1), 0);
-        beliefBase.revision(getPredicate(2, 2), 0);
-        beliefBase.revision(getPredicate(3, 2), 0);
+        beliefBase.revisionMastermind(getPredicate(0, 1), 0);
+        beliefBase.revisionMastermind(getPredicate(1, 1), 0);
+        beliefBase.revisionMastermind(getPredicate(2, 2), 0);
+        beliefBase.revisionMastermind(getPredicate(3, 2), 0);
     }
 
     private int proveColor(int position) {
@@ -168,23 +168,9 @@ public class MasterMindAI {
                 }
                 formulaString = formulaString.substring(0, formulaString.length()-1);
                 result[i].add(Formula.parseString(formulaString));
-                /*for (int j = 0; j < MasterMindGame.CODE_LENGTH; j++) {
-                    if (j != i && feedback[indices[j]] != red) {
-                        beliefBase.revision(Formula.parseString(NotFormula.operator+getPredicate(j, colors[i])), priority);
-                        result[i].add(Formula.parseString(NotFormula.operator+getPredicate(j, colors[i])));
-                    }
-                }*/
             }
             else if (feedback[indices[i]] == white) {
-                //String formulaString = "";
                 result[i].add(Formula.parseString(NotFormula.operator+getPredicate(i, colors[i])));
-                /*for (int j = 0; j < MasterMindGame.CODE_LENGTH; j++) {
-                    if (j != i && feedback[indices[j]] != red) {
-                        formulaString += getPredicate(j, colors[i])+OrFormula.operator;
-                    }
-                }
-                formulaString = formulaString.substring(0, formulaString.length()-1);
-                beliefBase.revision(formulaString, priority);*/
             }
             else {
                 boolean hasWhite = false;
@@ -318,15 +304,15 @@ public class MasterMindAI {
             }
             for (int i : colorsNotPresent) {
                 for (int j = 0; j < MasterMindGame.CODE_LENGTH; j++) {
-                    beliefBase.revision(NotFormula.operator + getPredicate(j, i), FACT_PRIORITY);
-                    factBeliefBase.revision(NotFormula.operator + getPredicate(j, i), FACT_PRIORITY);
+                    beliefBase.revisionMastermind(NotFormula.operator + getPredicate(j, i), FACT_PRIORITY);
+                    factBeliefBase.revisionMastermind(NotFormula.operator + getPredicate(j, i), FACT_PRIORITY);
                 }
             }
         }
         if (nReds == 0) {
             for (int i = 0; i < MasterMindGame.CODE_LENGTH; i++) {
-                beliefBase.revision(NotFormula.operator + getPredicate(i, colors[i]), FACT_PRIORITY);
-                factBeliefBase.revision(NotFormula.operator + getPredicate(i, colors[i]), FACT_PRIORITY);
+                beliefBase.revisionMastermind(NotFormula.operator + getPredicate(i, colors[i]), FACT_PRIORITY);
+                factBeliefBase.revisionMastermind(NotFormula.operator + getPredicate(i, colors[i]), FACT_PRIORITY);
             }
         }
         List<int[]> feedbackDistributions = new ArrayList<>();
@@ -345,9 +331,9 @@ public class MasterMindAI {
         //Add the formulas.
         for (int i = 0; i < choice.length; i++) {
             for (int j = 0; j < choice[i].size(); j++) {
-                beliefBase.revision(choice[i].get(j), priority);
+                beliefBase.revisionMastermind(choice[i].get(j), priority);
                 if (priority >= FACT_PRIORITY) {
-                    factBeliefBase.revision(choice[i].get(j), priority);
+                    factBeliefBase.revisionMastermind(choice[i].get(j), priority);
                 }
             }
         }

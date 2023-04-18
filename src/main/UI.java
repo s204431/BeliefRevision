@@ -65,7 +65,7 @@ public class UI extends JPanel {
         JButton contractionButton = new JButton("Contraction");
         contractionButton.addActionListener(e -> {
             try {
-                beliefBase.contraction(Formula.parseString(textField.getText()), Integer.parseInt(priorityTextField.getText()));
+                beliefBase.contraction(Formula.parseString(textField.getText()));
                 updateList();
             } catch (Exception e1) {}
         });
