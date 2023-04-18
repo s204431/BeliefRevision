@@ -216,9 +216,9 @@ public class BeliefBase {
             return new OrFormula(new NotFormula(removeImpliesAndBiconditional(formula.operands[0])), removeImpliesAndBiconditional(formula.operands[1]));
         }
         else if (formula instanceof BiconditionFormula) {
-            return new OrFormula(
-                    new AndFormula(removeImpliesAndBiconditional(formula.operands[0]), removeImpliesAndBiconditional(formula.operands[1])),
-                    new AndFormula(new NotFormula(removeImpliesAndBiconditional(formula.operands[0])), new NotFormula(removeImpliesAndBiconditional(formula.operands[1]))));
+            return new AndFormula(
+                    new OrFormula(new NotFormula(removeImpliesAndBiconditional(formula.operands[0])), removeImpliesAndBiconditional(formula.operands[1])),
+                    new OrFormula(new NotFormula(removeImpliesAndBiconditional(formula.operands[1])), removeImpliesAndBiconditional(formula.operands[0])));
         }
         else if (formula instanceof NotFormula) {
             return new NotFormula(removeImpliesAndBiconditional(formula.operands[0]));
