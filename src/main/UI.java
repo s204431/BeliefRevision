@@ -1,6 +1,8 @@
 package main;
 
 import formulas.Formula;
+import masterMind.MasterMindGame;
+import masterMind.MasterMindUI;
 
 import javax.swing.*;
 import java.awt.*;
@@ -9,6 +11,8 @@ public class UI extends JPanel {
 
     private List list;
     private BeliefBase beliefBase;
+    private MasterMindGame masterMindGame;
+    private MasterMindUI masterMindUI;
 
     public UI(BeliefBase beliefBase) {
         this.beliefBase = beliefBase;
@@ -72,6 +76,20 @@ public class UI extends JPanel {
         label3.setFont(label3.getFont().deriveFont(20f));
         label3.setBounds(100, 230, 500, 40);
         add(label3);
+
+        JButton masterMindButton = new JButton("MasterMind");
+        masterMindButton.addActionListener(e -> {
+            if (masterMindUI != null) {
+                masterMindUI.close();
+            }
+            beliefBase.reset();
+            masterMindGame = new MasterMindGame();
+            masterMindUI = new MasterMindUI(masterMindGame, beliefBase, this);
+            updateList();
+            repaint();
+        });
+        masterMindButton.setBounds(frame.getPreferredSize().width / 2 - 80,  600, 160, 40);
+        add(masterMindButton);
 
         list = new List();
         list.setBounds(100, 280, 500, 300);

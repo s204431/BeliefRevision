@@ -290,6 +290,11 @@ public class BeliefBase {
         }
     }
 
+    public void reset() {
+        beliefBase = new ArrayList<>();
+        priorities = new ArrayList<>();
+    }
+
     public String toString() {
         StringBuilder s = new StringBuilder("{");
         for (int i = 0; i < beliefBase.size(); i++) {

@@ -8,10 +8,13 @@ import java.awt.*;
 import java.awt.event.*;
 
 public class MasterMindUI extends JPanel implements KeyListener {
+    private JFrame mainFrame;
+
     private MasterMindGame game;
 
     private Color[] colors = { null, Color.RED, Color.YELLOW, Color.GREEN, Color.BLUE, Color.PINK, Color.DARK_GRAY, Color.BLACK, Color.WHITE };
     private JButton[] buttons;
+    private JButton AIMoveButton;
 
     private int screenWidth;
     private int screenHeight;
@@ -57,21 +60,59 @@ public class MasterMindUI extends JPanel implements KeyListener {
             buttonPanel.add(buttons[i]);
         }
 
+        AIMoveButton = new JButton("AI move");
+        AIMoveButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (!game.getGameOver()) {
+                    int[] move = ai.makeMove(game.getTurn() == MasterMindGame.NUMBER_OF_GUESSES-1);
+                    int[] feedback = game.makeGuess(move);
+                    if (game.getTurn() != MasterMindGame.NUMBER_OF_GUESSES) {
+                        ai.updateBeliefBase(move, feedback);
+                        ui.updateList();
+                    }
+                    repaint();
+                }
+            }
+        });
+        add(AIMoveButton);
+
         setPreferredSize(new Dimension(screenWidth / 4, screenHeight * 3 / 4));
         setBackground(new Color(255, 150, 50));
         setLayout(new BorderLayout());
         add(buttonPanel, BorderLayout.SOUTH);
 
-        JFrame mainFrame = new JFrame();
+        mainFrame = new JFrame();
         mainFrame.setFocusable(true);
         setFocusable(true);
         mainFrame.addKeyListener(this);
         mainFrame.setTitle("Master Mind");
-        mainFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         mainFrame.add(this);
         mainFrame.pack();
-        mainFrame.setLocationByPlatform(true);
-        mainFrame.setLocationRelativeTo(null);
+        mainFrame.addWindowListener(new WindowListener() {
+            @Override
+            public void windowOpened(WindowEvent e) {}
+
+            @Override
+            public void windowClosing(WindowEvent e) {
+                beliefBase.reset();
+                ui.updateList();
+                ui.repaint();
+            }
+
+            @Override
+            public void windowClosed(WindowEvent e) {}
+            @Override
+            public void windowIconified(WindowEvent e) {}
+            @Override
+            public void windowDeiconified(WindowEvent e) {}
+            @Override
+            public void windowActivated(WindowEvent e) {}
+            @Override
+            public void windowDeactivated(WindowEvent e) {}
+        });
+        //mainFrame.setLocationByPlatform(true);
+        //mainFrame.setLocationRelativeTo(null);
         mainFrame.setVisible(true);
     }
 
@@ -156,6 +197,10 @@ public class MasterMindUI extends JPanel implements KeyListener {
             g2d.setColor(Color.BLACK);
             g.drawRect(x, y, cellWidth, cellHeight);
         }
+
+        // Draw AI move button
+        int i = MasterMindGame.CODE_LENGTH;
+        AIMoveButton.setBounds(xGap/2 + i*xGap + i*xGap*3/4, yGap*13 + yGap/2, cellWidth * 3 / 2, cellHeight * 3 / 2);
     }
 
     @Override
@@ -179,6 +224,10 @@ public class MasterMindUI extends JPanel implements KeyListener {
     @Override
     public void keyReleased(KeyEvent e) {
 
+    }
+
+    public void close() {
+        mainFrame.dispatchEvent(new WindowEvent(mainFrame, WindowEvent.WINDOW_CLOSING));
     }
 }
 

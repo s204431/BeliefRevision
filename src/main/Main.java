@@ -17,8 +17,5 @@ public class Main {
         System.out.println("Pretty print: " + parsed.prettyPrint());
         System.out.println("Is valid: " + beliefBase.resolution(parsed));
         UI ui = new UI(beliefBase);
-
-        MasterMindGame masterMind = new MasterMindGame();
-        new MasterMindUI(masterMind, beliefBase, ui);
     }
 }
