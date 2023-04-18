@@ -6,6 +6,8 @@ import masterMind.MasterMindUI;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 public class UI extends JPanel {
 
@@ -45,7 +47,7 @@ public class UI extends JPanel {
         add(priorityTextField);
 
         JButton revisionButton = new JButton("Revision");
-        revisionButton.setBounds(100, 150, 160, 40);
+        revisionButton.setBounds(100, 150, 120, 40);
         revisionButton.addActionListener(e -> {
             try {
                 beliefBase.revision(Formula.parseString(textField.getText()), Integer.parseInt(priorityTextField.getText()));
@@ -59,7 +61,7 @@ public class UI extends JPanel {
                 updateList();
             } catch (Exception e1) {}
         });
-        expansionButton.setBounds(270, 150, 160, 40);
+        expansionButton.setBounds(230, 150, 120, 40);
         JButton contractionButton = new JButton("Contraction");
         contractionButton.addActionListener(e -> {
             try {
@@ -67,10 +69,37 @@ public class UI extends JPanel {
                 updateList();
             } catch (Exception e1) {}
         });
-        contractionButton.setBounds(440, 150, 160, 40);
+        contractionButton.setBounds(360, 150, 120, 40);
+
+        JLabel entailmentLabel = new JLabel("", SwingConstants.CENTER);
+        entailmentLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        entailmentLabel.setBounds(490, 185, 140, 40);
+        entailmentLabel.setAlignmentX(CENTER_ALIGNMENT);
+        entailmentLabel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 3));
+
+        JButton entailmentButton = new JButton("Check entailment");
+        entailmentButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    if (textField.getText().isEmpty()) {
+                        entailmentLabel.setText("");
+                        return;
+                    }
+                    boolean entailsFormula = beliefBase.entailsFormula(Formula.parseString(textField.getText()));
+                    entailmentLabel.setForeground(entailsFormula ? new Color(1, 150, 32) : Color.RED);
+                    entailmentLabel.setText(entailsFormula ? "True" : "False");
+                    repaint();
+                } catch (Exception ex) {}
+            }
+        });
+        entailmentButton.setBounds(490, 150, 140, 40);
         add(revisionButton);
         add(expansionButton);
         add(contractionButton);
+        add(entailmentButton);
+        add(entailmentLabel);
+
 
         JLabel label3 = new JLabel("Current belief base:");
         label3.setFont(label3.getFont().deriveFont(20f));

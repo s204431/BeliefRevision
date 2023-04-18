@@ -16,6 +16,7 @@ public class Main {
         System.out.println("Internal representation: " + parsed);
         System.out.println("Pretty print: " + parsed.prettyPrint());
         System.out.println("Is valid: " + beliefBase.resolution(parsed));
-        UI ui = new UI(beliefBase);
+        
+        new UI(beliefBase);
     }
 }
