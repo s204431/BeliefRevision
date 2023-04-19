@@ -99,8 +99,6 @@ public class BeliefBase {
         for (int i = 0; i < equivalences.length; i++) {
             for (Formula f : equivalences[i]) {
                 for (int j = 0; j < result.size(); j++) {
-                    System.out.println(result.get(j) + " " + beliefBaseCopy.get(i));
-                    System.out.println(result.get(j) == beliefBaseCopy.get(i));
                     if (result.get(j) == beliefBaseCopy.get(i)) {
                         result.add(j, f);
                         prioritiesResult.add(j, prioritiesResult.get(j));

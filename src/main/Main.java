@@ -8,7 +8,7 @@ public class Main {
 
     public static void main(String[] args) {
         BeliefBase beliefBase = new BeliefBase();
-        String formula = "(p->q)<->(!q->!p)";
+        String formula = "(p -> q) <-> (!q -> !p)";
         //String formula = "((p & q) -> r) & (p -> !r) & (q -> !r) -> !r";
         Formula parsed = Formula.parseString(formula);
         System.out.println("Parsing formula: " + formula);
