@@ -10,14 +10,15 @@ import java.util.*;
 
 public class MasterMindAI {
 
-    private BeliefBase beliefBase;
-    private BeliefBase factBeliefBase;
+    private BeliefBase beliefBase; //Belief base for all beliefs.
+    private BeliefBase factBeliefBase; //Belief base for facts only.
     private List<Integer>[] notGuessedColors = new ArrayList[MasterMindGame.CODE_LENGTH]; //Colors not yet guessed for each position.
-    private static final int FACT_PRIORITY = 100000;
-    private List<Integer> alreadyGuessed = new ArrayList<>();
-    private List<int[]> colorsHistory = new ArrayList<>();
-    private List<int[]> feedbackHistory = new ArrayList<>();
+    private static final int FACT_PRIORITY = 100000; //Priority of a fact.
+    private List<Integer> alreadyGuessed = new ArrayList<>(); //Guesses that have already been made.
+    private List<int[]> colorsHistory = new ArrayList<>(); //History of guesses.
+    private List<int[]> feedbackHistory = new ArrayList<>(); //History of feedback.
 
+    //Initializes the AI. Adds rules and initial guess to the belief base.
     public MasterMindAI(BeliefBase beliefBase) {
         this.beliefBase = beliefBase;
         factBeliefBase = new BeliefBase();
@@ -42,6 +43,7 @@ public class MasterMindAI {
         beliefBase.revisionMastermind(getPredicate(3, 2), 0);
     }
 
+    //Checks if the color on a specific position is known for sure.
     private int proveColor(int position) {
         for (int i = 1; i <= MasterMindGame.NUMBER_OF_COLORS; i++) {
             if (factBeliefBase.entailsFormula(Formula.parseString(getPredicate(position, i)))) {
@@ -60,6 +62,7 @@ public class MasterMindAI {
         return -1;
     }
 
+    //Checks if the code is known for sure.
     private int[] knownCode() {
         int[] result = new int[MasterMindGame.CODE_LENGTH];
         for (int i = 0; i < result.length; i++) {
@@ -72,6 +75,7 @@ public class MasterMindAI {
         return result;
     }
 
+    //Returns the next guess from the AI.
     public int[] makeMove(boolean isFinalMove) {
         int[] result = knownCode();
         if (result != null) {
@@ -79,45 +83,40 @@ public class MasterMindAI {
         }
         result = new int[MasterMindGame.CODE_LENGTH];
         Random r = new Random();
-        //if (isFinalMove) {
         boolean[] knowColor = new boolean[MasterMindGame.CODE_LENGTH];
-            for (int i = 0; i < MasterMindGame.CODE_LENGTH; i++) {
-                int known = proveColor(i);
-                if (known >= 0) {
-                    result[i] = known;
-                    knowColor[i] = true;
-                    continue;
-                }
-                int believed = getBelievedColor(i);
-                if (believed >= 0) {
-                    if (isFinalMove || colorsHistory.isEmpty()) {
-                        result[i] = believed;
-                    }
-                    else {
-                        result[i] = r.nextInt(1, MasterMindGame.NUMBER_OF_COLORS+1);
-                    }
+        for (int i = 0; i < MasterMindGame.CODE_LENGTH; i++) {
+            int known = proveColor(i);
+            if (known >= 0) {
+                result[i] = known;
+                knowColor[i] = true;
+                continue;
+            }
+            int believed = getBelievedColor(i);
+            if (believed >= 0) {
+                if (isFinalMove || colorsHistory.isEmpty()) {
+                    result[i] = believed;
                 }
                 else {
-                    List<Integer> believedPossibilities = getPossibilities(i);
-                    if (believedPossibilities.isEmpty() || (!isFinalMove && believedPossibilities.size() == 1)) {
-                        result[i] = r.nextInt(1, MasterMindGame.NUMBER_OF_COLORS+1);
-                    }
-                    else {
-                        result[i] = believedPossibilities.get(r.nextInt(believedPossibilities.size()));
-                    }
+                    result[i] = r.nextInt(1, MasterMindGame.NUMBER_OF_COLORS+1);
                 }
             }
-            String string = "";
-            for (int i : result) {
-                string += i;
+            else {
+                List<Integer> believedPossibilities = getPossibilities(i);
+                if (believedPossibilities.isEmpty() || (!isFinalMove && believedPossibilities.size() == 1)) {
+                    result[i] = r.nextInt(1, MasterMindGame.NUMBER_OF_COLORS+1);
+                }
+                else {
+                    result[i] = believedPossibilities.get(r.nextInt(believedPossibilities.size()));
+                }
             }
-            if (!isFinalMove && alreadyGuessed.contains(Integer.parseInt(string))) {
-                result = getRandomGuess(result, knowColor);
-            }
-        //}
-        //else {
-            //result = getRandomGuess();
-        //}
+        }
+        String string = "";
+        for (int i : result) {
+            string += i;
+        }
+        if (!isFinalMove && alreadyGuessed.contains(Integer.parseInt(string))) {
+            result = getRandomGuess(result, knowColor);
+        }
         String string2 = "";
         for (int i : result) {
             string2 += i;
@@ -126,6 +125,7 @@ public class MasterMindAI {
         return result;
     }
 
+    //Returns a random guess for positions that are not known and that has not been guessed yet.
     private int[] getRandomGuess(int[] currentGuess, boolean[] knowColor) {
         int[] result = currentGuess;
         Random r = new Random();
@@ -145,6 +145,7 @@ public class MasterMindAI {
         return result;
     }
 
+    //Calculates the factorial of a number.
     private int factorial(int n) {
         if (n == 0) {
             return 1;
@@ -152,6 +153,8 @@ public class MasterMindAI {
         return n*factorial(n-1);
     }
 
+    //Returns the information that can be gathered from the feedback if the feedback is assumed
+    //to be given by indices.
     private List<Formula>[] getKnowledge(int[] colors, int[] feedback, int[] indices) {
         int red = MasterMindGame.Color.RED.ordinal();
         int white = MasterMindGame.Color.WHITE.ordinal();
@@ -195,6 +198,7 @@ public class MasterMindAI {
         return result;
     }
 
+    //Recursively returns all information that can be gathered from each possible distribution of the feedback.
     private List<List<Formula>[]> getKnowledgeRecursive(List<List<Formula>[]> formulas, List<int[]> feedbackDistributions, int[] colors, int[] feedback, int[] indices, int index, List<Integer> alreadyTried) {
         for (int i = 0; i < indices.length; i++) {
             boolean alreadyContained = false;
@@ -248,7 +252,7 @@ public class MasterMindAI {
         return formulas;
     }
 
-    //Returns a color at a position if we know the color. Otherwise, returns -1.
+    //Returns a color at a position if the AI thinks it knows the color. Otherwise, returns -1.
     private int getBelievedColor(int position) {
         for (int i = 1; i <= MasterMindGame.NUMBER_OF_COLORS; i++) {
             if (beliefBase.entailsFormula(Formula.parseString(getPredicate(position, i)))) {
@@ -258,7 +262,7 @@ public class MasterMindAI {
         return -1;
     }
 
-    //Get the colors that could possibly be at a position.
+    //Get the colors that could possibly be at a position based on beliefs (not just facts).
     private List<Integer> getPossibilities(int position) {
         List<Integer> possibilities = new ArrayList<>();
         for (int i = 1; i <= MasterMindGame.NUMBER_OF_COLORS; i++) {
@@ -269,10 +273,10 @@ public class MasterMindAI {
         return possibilities;
     }
 
+    //Updates the belief base with the given guess and feedback (and all previous feedback).
     public void updateBeliefBase(int[] colors, int[] feedback) {
         colorsHistory.add(colors);
         feedbackHistory.add(feedback);
-
         int sizeBefore;
         do {
             sizeBefore = factBeliefBase.size();
@@ -282,6 +286,7 @@ public class MasterMindAI {
         } while(sizeBefore != factBeliefBase.size());
     }
 
+    //Updates the belief base with the given guess and feedback.
     private void reviseBeliefBase(int[] colors, int[] feedback) {
         int red = MasterMindGame.Color.RED.ordinal();
         int white = MasterMindGame.Color.WHITE.ordinal();
@@ -339,6 +344,7 @@ public class MasterMindAI {
         }
     }
 
+    //Returns the string representation of the predicate with a specific position and color.
     private String getPredicate(int position, int color) {
         return "p"+position+"c"+color;
     }

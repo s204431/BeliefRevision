@@ -1,9 +1,6 @@
 package main;
 
 import formulas.*;
-
-import java.awt.*;
-import java.text.Normalizer;
 import java.util.*;
 import java.util.List;
 
@@ -11,6 +8,7 @@ public class BeliefBase {
     protected List<Formula> beliefBase = new ArrayList<>(); //Formulas in the belief base.
     protected List<Integer> priorities = new ArrayList<>(); //Priority of each formula.
 
+    //Returns the size of the belief base.
     public int size() {
         return beliefBase.size();
     }
@@ -31,7 +29,7 @@ public class BeliefBase {
         revision(Formula.parseString(formula));
     }
 
-    //Revision of formula with generated priority.
+    //Perform revision of a formula with a generated priority.
     public void revision(Formula formula) {
         if (beliefBase.contains(formula)) {
             return;
@@ -40,7 +38,7 @@ public class BeliefBase {
         expansion(formula);
     }
 
-    //Expansion with generated priority.
+    //Performs expansion on a formula with a generated priority.
     public void expansion(Formula formula) {
         List<Formula> beliefBaseCopy = new ArrayList<>(beliefBase);
         beliefBaseCopy.add(formula);
@@ -116,6 +114,7 @@ public class BeliefBase {
         //expansion(formula, formula.getFormulaPriority());
     }
 
+    //Returns a conjunction of all formulas in the belief base.
     public Formula getBeliefBaseFormula(List<Formula> beliefBase) {
         Formula beliefBaseFormula = null;
         if (beliefBase.size() >= 2) {
@@ -130,6 +129,7 @@ public class BeliefBase {
         return beliefBaseFormula;
     }
 
+    //Checks if a list of formulas entails a specific formula.
     private boolean entailsFormula(List<Formula> beliefBase, Formula formula) {
         Formula beliefBaseFormula = getBeliefBaseFormula(beliefBase);
         if (beliefBaseFormula == null) {
@@ -138,10 +138,12 @@ public class BeliefBase {
         return entailment(beliefBaseFormula, formula);
     }
 
+    //Checks if the belief base entails a specific formula.
     public boolean entailsFormula(Formula formula) {
         return entailsFormula(beliefBase, formula);
     }
 
+    //Finds all inclusion subsets of a specific size for the belief base when contracting with a formula.
     private List<List<Formula>> getInclusionSubsets(List<Formula> formulas, Formula formulaToContract, int nFormulas, int startIndex, List<List<Formula>> result) {
         if (formulas.size() == nFormulas) {
             if (!entailsFormula(formulas, formulaToContract)) {
@@ -159,6 +161,7 @@ public class BeliefBase {
         return result;
     }
 
+    //Performs partial meet contraction with a specific formula.
     public void contraction(Formula formula) {
         if (!entailsFormula(formula)) {
             return;
@@ -197,14 +200,9 @@ public class BeliefBase {
         }
     }
 
+    //Checks if one formula entails another formula.
     public boolean entailment(Formula f1, Formula f2) {
         return resolution(new ImpliesFormula(f1, f2));
-    }
-
-    private void removeFormula(Formula formula) {
-        int index = beliefBase.indexOf(formula);
-        beliefBase.remove(index);
-        priorities.remove(index);
     }
 
     //Converts a formula to CNF and performs resolution on the formula. Returns true if it is valid, false if it is not valid.
@@ -219,7 +217,7 @@ public class BeliefBase {
         formula = pushNegationInwards(formula);
 
         //Convert to CNF.
-        formula = convertToCNF(formula);
+        formula = distributeAndOverOr(formula);
 
         //Extract clauses.
         List<List<Formula>> clauses = extractClauses(formula);
@@ -228,6 +226,7 @@ public class BeliefBase {
         return performResolution(clauses);
     }
 
+    //Performs resolution on a list of clauses.
     private boolean performResolution(List<List<Formula>> clauses) {
         int prevSize = 0;
         while(true) {
@@ -258,6 +257,7 @@ public class BeliefBase {
         }
     }
 
+    //Returns the resultants from clashing two clauses.
     private List<List<Formula>> clashClauses(List<Formula> clause1, List<Formula> clause2) {
         List<Formula> clashing = new ArrayList<>();
         List<int[]> indices = new ArrayList<>();
@@ -290,6 +290,7 @@ public class BeliefBase {
         return result;
     }
 
+    //Checks if two literals clash.
     private boolean isClash(Formula f1, Formula f2) {
         if (f1 instanceof NotFormula && f2 instanceof PredicateFormula) {
             return f1.operands[0].equals(f2);
@@ -300,35 +301,38 @@ public class BeliefBase {
         return false;
     }
 
-    private Formula convertToCNF(Formula formula) {
+    //Distributes conjunctions over disjunctions for a formula.
+    private Formula distributeAndOverOr(Formula formula) {
         boolean[] isCNF = new boolean[1];
         while (!isCNF[0]) {
             isCNF[0] = true;
-            formula = convertToCNFRecursive(formula, isCNF);
+            formula = distributeAndOverOrRecursive(formula, isCNF);
         }
         return formula;
     }
 
-    private Formula convertToCNFRecursive(Formula formula, boolean[] isCNF) {
+    //Recursively performs an iteration of distributing conjunctions over disjunctions for a formula.
+    private Formula distributeAndOverOrRecursive(Formula formula, boolean[] isCNF) {
         if (formula instanceof OrFormula) {
             if (formula.operands[0] instanceof AndFormula) {
                 isCNF[0] = false;
-                return new AndFormula(convertToCNFRecursive(new OrFormula(formula.operands[1], formula.operands[0].operands[0]), isCNF), convertToCNFRecursive(new OrFormula(formula.operands[1], formula.operands[0].operands[1]), isCNF));
+                return new AndFormula(distributeAndOverOrRecursive(new OrFormula(formula.operands[1], formula.operands[0].operands[0]), isCNF), distributeAndOverOrRecursive(new OrFormula(formula.operands[1], formula.operands[0].operands[1]), isCNF));
             }
             else if (formula.operands[1] instanceof AndFormula) {
                 isCNF[0] = false;
-                return new AndFormula(convertToCNFRecursive(new OrFormula(formula.operands[0], formula.operands[1].operands[0]), isCNF), convertToCNFRecursive(new OrFormula(formula.operands[0], formula.operands[1].operands[1]), isCNF));
+                return new AndFormula(distributeAndOverOrRecursive(new OrFormula(formula.operands[0], formula.operands[1].operands[0]), isCNF), distributeAndOverOrRecursive(new OrFormula(formula.operands[0], formula.operands[1].operands[1]), isCNF));
             }
             else {
-                return new OrFormula(convertToCNFRecursive(formula.operands[0], isCNF), convertToCNFRecursive(formula.operands[1], isCNF));
+                return new OrFormula(distributeAndOverOrRecursive(formula.operands[0], isCNF), distributeAndOverOrRecursive(formula.operands[1], isCNF));
             }
         }
         else if (formula instanceof AndFormula) {
-            return new AndFormula(convertToCNFRecursive(formula.operands[0], isCNF), convertToCNFRecursive(formula.operands[1], isCNF));
+            return new AndFormula(distributeAndOverOrRecursive(formula.operands[0], isCNF), distributeAndOverOrRecursive(formula.operands[1], isCNF));
         }
         return formula;
     }
 
+    //Replaces implications and bi-implications in a formula.
     private Formula removeImpliesAndBiconditional(Formula formula) {
         if (formula instanceof ImpliesFormula) {
             return new OrFormula(new NotFormula(removeImpliesAndBiconditional(formula.operands[0])), removeImpliesAndBiconditional(formula.operands[1]));
@@ -379,6 +383,7 @@ public class BeliefBase {
         }
     }
 
+    //Extracts the clauses for a formula on CNF.
     private List<List<Formula>> extractClauses(Formula formula) {
         List<List<Formula>> clauses = new ArrayList<>();
         if (!(formula instanceof AndFormula)) { //If there is only one clause.
@@ -388,6 +393,7 @@ public class BeliefBase {
         return clauses;
     }
 
+    //Recursively extracts the clauses for a formula on CNF.
     private void extractClauses(Formula formula, List<List<Formula>> clauses) {
         if (formula instanceof OrFormula) {
             extractClauses(formula.operands[0], clauses);
@@ -408,11 +414,13 @@ public class BeliefBase {
         }
     }
 
+    //Resets the belief base.
     public void reset() {
         beliefBase = new ArrayList<>();
         priorities = new ArrayList<>();
     }
 
+    //Converts the belief base to a string for debugging.
     public String toString() {
         StringBuilder s = new StringBuilder("{");
         for (int i = 0; i < beliefBase.size(); i++) {
@@ -427,10 +435,12 @@ public class BeliefBase {
 
     //----Everything below is stuff for Mastermind only----//
 
+    //Revision for Mastermind.
     public void revisionMastermind(String formula, int priority) {
         revisionMastermind(Formula.parseString(formula), priority);
     }
 
+    //Revision for Mastermind.
     public void revisionMastermind(Formula formula, int priority) {
         boolean success = contractionMastermind(new NotFormula(formula), priority);
         if (success) {
@@ -442,6 +452,7 @@ public class BeliefBase {
         }
     }
 
+    //Contraction for Mastermind.
     public boolean contractionMastermind(Formula formula, int priority) {
         if (!entailsFormula(formula)) {
             return true;
@@ -466,9 +477,12 @@ public class BeliefBase {
         return true;
     }
 
+    //Expansion for Mastermind.
     public void expansionMastermind(Formula formula, int priority) {
         if (beliefBase.contains(formula)) {
-            removeFormula(formula);
+            int index = beliefBase.indexOf(formula);
+            beliefBase.remove(index);
+            priorities.remove(index);
         }
         int i = 0;
         while (i < beliefBase.size() && priorities.get(i) <= priority) {
