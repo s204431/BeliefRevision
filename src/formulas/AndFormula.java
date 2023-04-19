@@ -3,6 +3,7 @@ package formulas;
 public class AndFormula extends Formula {
     public static String operator = "&";
     protected static int precedence = 3;
+    protected static int priority = 1;
 
     protected AndFormula() {
 
@@ -32,6 +33,10 @@ public class AndFormula extends Formula {
 
     public AndFormula copy() {
         return new AndFormula(operands[0].copy(), operands[1].copy());
+    }
+
+    public int getOperatorPriority() {
+        return priority;
     }
 
     public String toString() {

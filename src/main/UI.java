@@ -50,14 +50,16 @@ public class UI extends JPanel {
         revisionButton.setBounds(100, 150, 120, 40);
         revisionButton.addActionListener(e -> {
             try {
-                beliefBase.revision(Formula.parseString(textField.getText()), Integer.parseInt(priorityTextField.getText()));
+                //beliefBase.revision(Formula.parseString(textField.getText()), Integer.parseInt(priorityTextField.getText()));
+                beliefBase.revision(Formula.parseString(textField.getText()));
                 updateList();
             } catch (Exception e1) {}
         });
         JButton expansionButton = new JButton("Expansion");
         expansionButton.addActionListener(e -> {
             try {
-                beliefBase.expansion(Formula.parseString(textField.getText()), Integer.parseInt(priorityTextField.getText()));
+                //beliefBase.expansion(Formula.parseString(textField.getText()), Integer.parseInt(priorityTextField.getText()));
+                beliefBase.expansion(Formula.parseString(textField.getText()));
                 updateList();
             } catch (Exception e1) {}
         });

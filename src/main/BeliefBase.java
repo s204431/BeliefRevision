@@ -15,13 +15,105 @@ public class BeliefBase {
         return beliefBase.size();
     }
 
+    /*//Revision of formula with custom priority.
     public void revision(String formula, int priority) {
         revision(Formula.parseString(formula), priority);
     }
 
+    //Revision of formula with custom priority.
     public void revision(Formula formula, int priority) {
         contraction(new NotFormula(formula));
         expansion(formula, priority);
+    }*/
+
+    //Revision of formula with generated priority.
+    public void revision(String formula) {
+        revision(Formula.parseString(formula));
+    }
+
+    //Revision of formula with generated priority.
+    public void revision(Formula formula) {
+        if (beliefBase.contains(formula)) {
+            return;
+        }
+        contraction(new NotFormula(formula));
+        expansion(formula);
+    }
+
+    //Expansion with generated priority.
+    public void expansion(Formula formula) {
+        List<Formula> beliefBaseCopy = new ArrayList<>(beliefBase);
+        beliefBaseCopy.add(formula);
+        List<Formula>[] equivalences = new ArrayList[beliefBaseCopy.size()];
+        boolean[] alreadyUsed = new boolean[beliefBaseCopy.size()];
+        for (int i = 0; i < beliefBaseCopy.size(); i++) {
+            equivalences[i] = new ArrayList<>();
+            if (alreadyUsed[i]) {
+                continue;
+            }
+            for (int j = i+1; j < beliefBaseCopy.size(); j++) {
+                if (resolution(new BiconditionFormula(beliefBaseCopy.get(i), beliefBaseCopy.get(j)))) {
+                    equivalences[i].add(beliefBaseCopy.get(j));
+                    alreadyUsed[j] = true;
+                }
+            }
+        }
+        List<Formula> beliefBaseCopy2 = new ArrayList<>(beliefBaseCopy);
+        for (List<Formula> list : equivalences) {
+            for (Formula f : list) {
+                beliefBaseCopy2.remove(f);
+            }
+        }
+        List<Formula> result = new ArrayList<>();
+        List<Integer> prioritiesResult = new ArrayList<>();
+        while (!beliefBaseCopy2.isEmpty()) {
+            List<Formula> notEntailed = new ArrayList<>();
+            for (int i = 0; i < beliefBaseCopy2.size(); i++) {
+                boolean entailed = false;
+                for (int j = 0; j < beliefBaseCopy2.size(); j++) {
+                    if (j != i && entailment(beliefBaseCopy2.get(j), beliefBaseCopy2.get(i))) {
+                        entailed = true;
+                        break;
+                    }
+                }
+                if (!entailed) {
+                    notEntailed.add(beliefBaseCopy2.get(i));
+                }
+            }
+            for (int i = 0; i < notEntailed.size(); i++) {
+                //Add
+                int priority = notEntailed.get(i).getFormulaPriority();
+                for (int j = result.size()-1; j >= 0; j--) {
+                    if (entailment(result.get(j), notEntailed.get(i))) {
+                        priority += prioritiesResult.get(j);
+                        break;
+                    }
+                }
+                int j = 0;
+                while (j < result.size() && prioritiesResult.get(j) <= priority) {
+                    j++;
+                }
+                result.add(j, notEntailed.get(i));
+                prioritiesResult.add(j, priority);
+                beliefBaseCopy2.remove(notEntailed.get(i));
+            }
+        }
+        for (int i = 0; i < equivalences.length; i++) {
+            for (Formula f : equivalences[i]) {
+                for (int j = 0; j < result.size(); j++) {
+                    System.out.println(result.get(j) + " " + beliefBaseCopy.get(i));
+                    System.out.println(result.get(j) == beliefBaseCopy.get(i));
+                    if (result.get(j) == beliefBaseCopy.get(i)) {
+                        result.add(j, f);
+                        prioritiesResult.add(j, prioritiesResult.get(j));
+                        break;
+                    }
+                }
+            }
+        }
+        beliefBase = result;
+        priorities = prioritiesResult;
+        //expansion(formula, formula.getFormulaPriority());
     }
 
     public Formula getBeliefBaseFormula(List<Formula> beliefBase) {
@@ -105,18 +197,6 @@ public class BeliefBase {
         }
     }
 
-    public void expansion(Formula formula, int priority) {
-        if (beliefBase.contains(formula)) {
-            removeFormula(formula);
-        }
-        int i = 0;
-        while (i < beliefBase.size() && priorities.get(i) <= priority) {
-            i++;
-        }
-        beliefBase.add(i, formula);
-        priorities.add(i, priority);
-    }
-
     public boolean entailment(Formula f1, Formula f2) {
         return resolution(new ImpliesFormula(f1, f2));
     }
@@ -180,10 +260,12 @@ public class BeliefBase {
 
     private List<List<Formula>> clashClauses(List<Formula> clause1, List<Formula> clause2) {
         List<Formula> clashing = new ArrayList<>();
-        for (Formula formula1 : clause1) {
-            for (Formula formula2 : clause2) {
-                if (isClash(formula1, formula2)) {
-                    clashing.add(formula1 instanceof NotFormula ? formula2 : formula1);
+        List<int[]> indices = new ArrayList<>();
+        for (int i = 0; i < clause1.size(); i++) {
+            for (int j = 0; j < clause2.size(); j++) {
+                if (isClash(clause1.get(i), clause2.get(j))) {
+                    clashing.add(clause1.get(i) instanceof NotFormula ? clause2.get(j) : clause1.get(i));
+                    indices.add(new int[] {i, j});
                 }
             }
         }
@@ -191,16 +273,16 @@ public class BeliefBase {
         if (clashing.size() > 1) {
             return result;
         }
-        for (Formula formula : clashing) {
+        for (int i = 0; i < clashing.size(); i++) {
             List<Formula> resolvent = new ArrayList<>();
-            for (Formula clause : clause1) {
-                if (!clause.equals(formula) && !isClash(clause, formula) && !resolvent.contains(clause)) {
-                    resolvent.add(clause);
+            for (int j = 0; j < clause1.size(); j++) {
+                if (j != indices.get(i)[0] && !resolvent.contains(clause1.get(j))) {
+                    resolvent.add(clause1.get(j));
                 }
             }
-            for (Formula clause : clause2) {
-                if (!clause.equals(formula) && !isClash(clause, formula) && !resolvent.contains(clause)) {
-                    resolvent.add(clause);
+            for (int j = 0; j < clause2.size(); j++) {
+                if (j != indices.get(i)[1] && !resolvent.contains(clause2.get(j))) {
+                    resolvent.add(clause2.get(j));
                 }
             }
             result.add(resolvent);
@@ -343,7 +425,7 @@ public class BeliefBase {
         return s.toString();
     }
 
-    //----Stuff for mastermind only----//
+    //----Everything below is stuff for Mastermind only----//
 
     public void revisionMastermind(String formula, int priority) {
         revisionMastermind(Formula.parseString(formula), priority);
@@ -356,7 +438,7 @@ public class BeliefBase {
             if (index >= 0) {
                 priority = Math.max(priorities.get(index), priority);
             }
-            expansion(formula, priority);
+            expansionMastermind(formula, priority);
         }
     }
 
@@ -382,5 +464,17 @@ public class BeliefBase {
             }
         }
         return true;
+    }
+
+    public void expansionMastermind(Formula formula, int priority) {
+        if (beliefBase.contains(formula)) {
+            removeFormula(formula);
+        }
+        int i = 0;
+        while (i < beliefBase.size() && priorities.get(i) <= priority) {
+            i++;
+        }
+        beliefBase.add(i, formula);
+        priorities.add(i, priority);
     }
 }

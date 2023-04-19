@@ -3,6 +3,7 @@ package formulas;
 public class OrFormula extends Formula {
     public static String operator = "|";
     protected static int precedence = 2;
+    protected static int priority = 1;
 
     protected OrFormula() {
 
@@ -32,6 +33,10 @@ public class OrFormula extends Formula {
 
     public OrFormula copy() {
         return new OrFormula(operands[0].copy(), operands[1].copy());
+    }
+
+    public int getOperatorPriority() {
+        return priority;
     }
 
     public String toString() {

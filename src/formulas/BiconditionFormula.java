@@ -3,6 +3,7 @@ package formulas;
 public class BiconditionFormula extends Formula {
     public static String operator = "<->";
     protected static int precedence = 0;
+    protected static int priority = 3;
 
     protected BiconditionFormula() {
 
@@ -32,6 +33,10 @@ public class BiconditionFormula extends Formula {
 
     public BiconditionFormula copy() {
         return new BiconditionFormula(operands[0].copy(), operands[1].copy());
+    }
+
+    public int getOperatorPriority() {
+        return priority;
     }
 
     public String toString() {

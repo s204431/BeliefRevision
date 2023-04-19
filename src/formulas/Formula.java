@@ -8,6 +8,7 @@ public abstract class Formula {
     private static Formula[] allOperators = {new AndFormula(), new OrFormula(), new BiconditionFormula(), new ImpliesFormula(), new NotFormula()};
     public static String operator; //The string representation of the operator.
     protected static int precedence; //The precedence of the operator.
+    protected static int priority = 0; //Priority of operator for belief base.
     protected static Associativity associativity = Associativity.left; //Use left associativity by default.
     public Formula[] operands;
 
@@ -123,6 +124,25 @@ public abstract class Formula {
 
     public Formula copy() {
         return null;
+    }
+
+    public int getOperatorPriority() {
+        return priority;
+    }
+
+    public int getFormulaPriority() {
+        return getFormulaPriorityRecursive()+1;
+    }
+
+    private int getFormulaPriorityRecursive() {
+        if (operands == null) {
+            return 0;
+        }
+        int sum = 0;
+        for (Formula formula : operands) {
+            sum += formula.getFormulaPriorityRecursive();
+        }
+        return sum+getOperatorPriority();
     }
 
     public String prettyPrint() {

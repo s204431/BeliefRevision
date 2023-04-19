@@ -3,6 +3,7 @@ package formulas;
 public class ImpliesFormula extends Formula {
     public static String operator = "->";
     protected static int precedence = 1;
+    protected static int priority = 1;
     protected static Associativity associativity = Associativity.right;
 
     protected ImpliesFormula() {
@@ -33,6 +34,10 @@ public class ImpliesFormula extends Formula {
 
     public ImpliesFormula copy() {
         return new ImpliesFormula(operands[0].copy(), operands[1].copy());
+    }
+
+    public int getOperatorPriority() {
+        return priority;
     }
 
     public String toString() {
