@@ -129,6 +129,9 @@ public class BeliefBase {
 
     //Checks if a list of formulas entails a specific formula.
     private boolean entailsFormula(List<Formula> beliefBase, Formula formula) {
+        if (resolution(formula)) {
+            return true;
+        }
         Formula beliefBaseFormula = getBeliefBaseFormula(beliefBase);
         if (beliefBaseFormula == null) {
             return false;
