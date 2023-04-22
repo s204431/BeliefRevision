@@ -13,17 +13,6 @@ public class BeliefBase {
         return beliefBase.size();
     }
 
-    /*//Revision of formula with custom priority.
-    public void revision(String formula, int priority) {
-        revision(Formula.parseString(formula), priority);
-    }
-
-    //Revision of formula with custom priority.
-    public void revision(Formula formula, int priority) {
-        contraction(new NotFormula(formula));
-        expansion(formula, priority);
-    }*/
-
     //Revision of formula with generated priority.
     public void revision(String formula) {
         revision(Formula.parseString(formula));
