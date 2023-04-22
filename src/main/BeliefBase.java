@@ -162,6 +162,53 @@ public class BeliefBase {
         return result;
     }
 
+    //Selection function that selects all subsets with the largest sum of priorities.
+    private List<List<Formula>> select(List<List<Formula>> subsets) {
+        List<List<Formula>> result = new ArrayList<>();
+        int best = -1;
+        for (int i = 0; i < subsets.size(); i++) {
+            int score = 0;
+            for (int j = 0; j < subsets.get(i).size(); j++) {
+                score += priorities.get(beliefBase.indexOf(subsets.get(i).get(j)));
+            }
+            if (score > best) {
+                best = score;
+                result = new ArrayList<>();
+                result.add(subsets.get(i));
+            }
+            else if (score == best) {
+                result.add(subsets.get(i));
+            }
+        }
+        return result;
+        /*int best = -1;
+        int bestIndex = -1;
+        int best2 = -1;
+        int bestIndex2 = -1;
+        for (int i = 0; i < subsets.size(); i++) {
+            int score = 0;
+            for (int j = 0; j < subsets.get(i).size(); j++) {
+                score += priorities.get(beliefBase.indexOf(subsets.get(i).get(j)));
+            }
+            if (score > best) {
+                best2 = best;
+                bestIndex2 = bestIndex;
+                best = score;
+                bestIndex = i;
+            }
+            else if (score > best2) {
+                best2 = score;
+                bestIndex2 = i;
+            }
+        }
+        List<List<Formula>> result = new ArrayList<>();
+        result.add(subsets.get(bestIndex));
+        if (subsets.size() > 1) {
+            result.add(subsets.get(bestIndex2));
+        }
+        return result;*/
+    }
+
     //Performs partial meet contraction with a specific formula.
     public void contraction(Formula formula) {
         if (!entailsFormula(formula)) {
@@ -181,19 +228,11 @@ public class BeliefBase {
             priorities = new ArrayList<>();
         }
         else {
-            int best = -1;
-            int bestIndex = -1;
-            for (int i = 0; i < result.size(); i++) {
-                int score = 0;
-                for (int j = 0; j < result.get(i).size(); j++) {
-                    score += priorities.get(beliefBase.indexOf(result.get(i).get(j)));
-                }
-                if (score > best) {
-                    best = score;
-                    bestIndex = i;
-                }
+            result = select(result);
+            beliefBase = result.get(0);
+            for (int i = 1; i < result.size(); i++) {
+                beliefBase.retainAll(result.get(i));
             }
-            beliefBase = result.get(bestIndex);
             priorities = new ArrayList<>();
             for (int i = 0; i < beliefBase.size(); i++) {
                 priorities.add(prioritiesCopy.get(beliefBaseCopy.indexOf(beliefBase.get(i))));
