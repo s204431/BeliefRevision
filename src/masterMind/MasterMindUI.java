@@ -37,7 +37,7 @@ public class MasterMindUI extends JPanel implements KeyListener {
         screenHeight = (int) screenSize.getHeight();
 
         JPanel buttonPanel = new JPanel(new GridLayout(1,0));
-        buttonPanel.setPreferredSize(new Dimension(screenWidth / 4, screenWidth / 32));
+        buttonPanel.setPreferredSize(new Dimension((int)(screenWidth / 3.7), screenWidth / 32));
         buttons = new JButton[MasterMindGame.NUMBER_OF_COLORS];
         for (int i = 0; i < buttons.length; i++) {
             buttons[i] = new JButton();
@@ -77,7 +77,7 @@ public class MasterMindUI extends JPanel implements KeyListener {
         });
         add(AIMoveButton);
 
-        setPreferredSize(new Dimension(screenWidth / 4, screenHeight * 3 / 4));
+        setPreferredSize(new Dimension((int)(screenWidth / 3.7), screenHeight * 3 / 4));
         setBackground(new Color(255, 150, 50));
         setLayout(new BorderLayout());
         add(buttonPanel, BorderLayout.SOUTH);
@@ -200,7 +200,7 @@ public class MasterMindUI extends JPanel implements KeyListener {
 
         // Draw AI move button
         int i = MasterMindGame.CODE_LENGTH;
-        AIMoveButton.setBounds(xGap/2 + i*xGap + i*xGap*3/4, yGap*13 + yGap/2, cellWidth * 3 / 2, cellHeight * 3 / 2);
+        AIMoveButton.setBounds(xGap/2 + i*xGap + i*xGap*3/4, yGap*13 + yGap/2, cellWidth * 2, cellHeight * 3 / 2);
     }
 
     @Override
