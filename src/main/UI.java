@@ -30,21 +30,12 @@ public class UI extends JPanel {
 
         JLabel label = new JLabel("Write formula (use !, &, |, ->, <->):");
         label.setFont(label.getFont().deriveFont(20f));
-        label.setBounds(100, 50, 400, 40);
+        label.setBounds(100, 50, 500, 40);
         add(label);
 
-        JLabel label2 = new JLabel("Priority:");
-        label2.setFont(label2.getFont().deriveFont(20f));
-        label2.setBounds(520, 50, 80, 40);
-        add(label2);
-
         JTextField textField = new JTextField();
-        textField.setBounds(100, 100, 400, 40);
+        textField.setBounds(100, 100, 500, 40);
         add(textField);
-
-        JTextField priorityTextField = new JTextField("0");
-        priorityTextField.setBounds(520, 100, 80, 40);
-        add(priorityTextField);
 
         JButton revisionButton = new JButton("Revision");
         revisionButton.setBounds(100, 150, 120, 40);

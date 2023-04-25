@@ -153,24 +153,7 @@ public class BeliefBase {
 
     //Selection function that selects all subsets with the largest sum of priorities.
     private List<List<Formula>> select(List<List<Formula>> subsets) {
-        List<List<Formula>> result = new ArrayList<>();
         int best = -1;
-        for (int i = 0; i < subsets.size(); i++) {
-            int score = 0;
-            for (int j = 0; j < subsets.get(i).size(); j++) {
-                score += priorities.get(beliefBase.indexOf(subsets.get(i).get(j)));
-            }
-            if (score > best) {
-                best = score;
-                result = new ArrayList<>();
-                result.add(subsets.get(i));
-            }
-            else if (score == best) {
-                result.add(subsets.get(i));
-            }
-        }
-        return result;
-        /*int best = -1;
         int bestIndex = -1;
         int best2 = -1;
         int bestIndex2 = -1;
@@ -195,7 +178,7 @@ public class BeliefBase {
         if (subsets.size() > 1) {
             result.add(subsets.get(bestIndex2));
         }
-        return result;*/
+        return result;
     }
 
     //Performs partial meet contraction with a specific formula.
